@@ -100,7 +100,6 @@ public class ChatServerGUI_v1 extends JFrame implements ActionListener, WindowLi
 			System.exit(0);
 		}
 		tf.setText("");
-//		tf.selectAll();
 	}
 	
 	@Override
@@ -257,6 +256,26 @@ class ChatThreadGUI extends Thread {
 		broadcast("<서버> : /userlistsync " + userlist);
 	}
 	
+	//전준형 - 자리비움
+	void awayfromkeyboard() {
+		for (int i = 0; i < modelUser.getRowCount(); i++) {
+			if(modelUser.getValueAt(i, 0).equals(id)) {
+				modelUser.setValueAt(id+"_자리비움", i, 0);
+			}
+		}
+		userSync();
+	}
+	
+	void backtokeyboard() {
+		for (int i = 0; i < modelUser.getRowCount(); i++) {
+			if(modelUser.getValueAt(i, 0).equals(id+"_자리비움")) {
+				modelUser.setValueAt(id, i, 0);
+			}
+		}
+		userSync();
+	}
+	//
+	
 	@Override
 	public void run() {
 		try {
@@ -273,7 +292,18 @@ class ChatThreadGUI extends Thread {
 					joinChannel("/" + msg.split(" ")[1]);
 				}else if(channel.containsKey(msg.split(" ")[0])) {
 					chBroadcast(msg);
-				}else {
+				}
+				
+				// 전준형 - 자리비움
+				else if(msg.equals("/afk")) {
+					awayfromkeyboard();
+				}
+				else if(msg.equals("/back")){
+					backtokeyboard();
+				}
+				//
+				
+				else {
 					ta_chat.append("[" + id + "] : " + msg + "\n");
 					broadcast("[" + id + "] : " + msg);	// 다른 클라이언트가 서버로 글을 보내면 서버가 읽어서 접속한 모두에게 보냄
 				}
@@ -281,10 +311,13 @@ class ChatThreadGUI extends Thread {
 			map.remove(id);
 			ta_chat.append("[" + id + "] 님이 퇴장하셨습니다.\n");
 			for (int i = 0; i < modelUser.getRowCount(); i++) {
-				if(modelUser.getValueAt(i, 0).equals(id)) {
+				// 전준형 - 자리비움
+				if(modelUser.getValueAt(i, 0).equals(id)
+					|| modelUser.getValueAt(i, 0).equals(id+"_자리비움")) {
 					modelUser.removeRow(i);
 					break;
 				}
+				// 자리비움 상태에서도 나갈수 있도록 조건 추가
 			}
 			userSync();
 		} catch (IOException e) {

@@ -34,6 +34,10 @@ public class ChatClientGUI_v1 extends JFrame implements ActionListener, WindowLi
 	BufferedReader in;
 	Socket socket;
 	String id;
+	// 전준형 - 자리비움
+	ClientThreadAFK afk; // afk 쓰레드
+	boolean is_afk = false;	//현재 자리비움인지 아닌지
+	//
 
 	public ChatClientGUI_v1() {
 		init();
@@ -100,10 +104,13 @@ public class ChatClientGUI_v1 extends JFrame implements ActionListener, WindowLi
 			out.flush();
 			
 			(new ClientThreadGUI(in, out, ta, socket, id, modelUser)).start();
-			// 서버가 보내는 내용을 계속 받기 위한 스레드 실행
+			
+			// 전준형 - 자리비움
+			afk = new ClientThreadAFK(out, is_afk, this);
+			afk.start();
+			// afk쓰레드 시작
+			
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
-//			e.printStackTrace();
 			ta.append("접속에 실패하였습니다.\n");
 			for (int i = 5; i > 0; i--) {
 				try {
@@ -138,11 +145,21 @@ public class ChatClientGUI_v1 extends JFrame implements ActionListener, WindowLi
 			
 			if(tf.getText().equals("/quit")){
 				System.exit(0);
-			}
-			
+			}	
 			tf.setText("");
 		}
-//		tf.selectAll();
+		
+		// 전준형 - 자리비움
+		if(is_afk) {
+			out.println("/back");
+			out.flush();
+			is_afk = false;
+			afk.afk_count = 0;
+			afk.is_afk = false;
+		} else {
+			afk.afk_count = 0;
+		}
+		//무슨 행동이든 했으면 자리비움 해제하고 자리비움 카운트 0으로 만들기
 	}
 
 	@Override
@@ -226,6 +243,8 @@ class ClientThreadGUI extends Thread {
 					ta.append(msg + "\n");
 					ta.setCaretPosition(ta.getDocument().getLength());	// 글씨가 자동으로 추가될 때 스크롤바가 안움직이는거 수정
 				}
+				
+				
 			}
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -284,3 +303,41 @@ class PopRoom extends JDialog implements ActionListener {
 	}
 	
 }
+
+// 전준형 - 자리비움
+class ClientThreadAFK extends Thread {
+	PrintWriter out;
+	int afk_count;
+	boolean is_afk;
+	ChatClientGUI_v1 main;
+	
+	public ClientThreadAFK(PrintWriter out, boolean is_afk, ChatClientGUI_v1 main) {
+		this.out = out;
+		this.is_afk = is_afk;
+		this.main = main;
+		afk_count = 0;
+	}
+	
+	@Override
+	public void run() {
+		while(true) {
+			try {
+				Thread.sleep(1000);
+				if(!is_afk) {	
+					afk_count++;
+					if(afk_count == 5) {
+						is_afk = true;
+						main.is_afk = true;
+						out.println("/afk");
+						out.flush();
+					}
+				}
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			
+		}
+	}
+}
+//
