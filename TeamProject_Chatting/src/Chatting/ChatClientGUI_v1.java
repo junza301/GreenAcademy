@@ -12,6 +12,8 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
+import java.util.ArrayList;
+import java.util.Iterator;
 
 import javax.swing.JButton;
 import javax.swing.JDialog;
@@ -28,16 +30,20 @@ public class ChatClientGUI_v1 extends JFrame implements ActionListener, WindowLi
 	JTextArea ta;
 	JTextField tf;
 	JButton btnSent, btnMake;
-	JTable tblList, tblUser;
-	DefaultTableModel modelList, modelUser;
+	JTable tblCh, tblUser;
+	DefaultTableModel modelCh, modelUser;
 	PrintWriter out;
 	BufferedReader in;
 	Socket socket;
 	String id;
-	// 전준형 - 자리비움
+	//// 전준형 - 자리비움
 	ClientThreadAFK afk; // afk 쓰레드
 	boolean is_afk = false;	//현재 자리비움인지 아닌지
-	//
+	////
+	
+	///// 이재봉 - 친구 리스트
+	ArrayList<String> friendlist;
+	/////
 
 	public ChatClientGUI_v1() {
 		init();
@@ -53,9 +59,13 @@ public class ChatClientGUI_v1 extends JFrame implements ActionListener, WindowLi
 		JPanel pnlCenter = new JPanel(new GridLayout(0, 1));
 		String[] hdList = {"방제목", "방장", "현재인원"};
 		String[][] ctList = {};
-		modelList = new DefaultTableModel(ctList, hdList);
-		tblList = new JTable(modelList);
-		JScrollPane sp_list = new JScrollPane(tblList);
+		modelCh = new DefaultTableModel(ctList, hdList){
+			public boolean isCellEditable(int i, int c){ 
+				return false; 
+				} 
+			};
+		tblCh = new JTable(modelCh);
+		JScrollPane sp_list = new JScrollPane(tblCh);
 		JPanel pnlChat = new JPanel(new BorderLayout());
 		ta = new JTextArea("===채팅내용===\n");
 		ta.setEditable(false);
@@ -66,7 +76,7 @@ public class ChatClientGUI_v1 extends JFrame implements ActionListener, WindowLi
 		JPanel pnlBtn = new JPanel(new GridLayout(1, 0));
 		btnSent = new JButton("보내기");
 		btnSent.addActionListener(this);
-		btnMake = new JButton("방생성");
+		btnMake = new JButton("입장");
 		btnMake.addActionListener(this);
 		pnlBtn.add(btnSent);
 		pnlBtn.add(btnMake);
@@ -82,7 +92,11 @@ public class ChatClientGUI_v1 extends JFrame implements ActionListener, WindowLi
 		
 		String[] hdUser = {"접속자"};
 		String[][] ctUser = {};
-		modelUser = new DefaultTableModel(ctUser, hdUser);
+		modelUser = new DefaultTableModel(ctUser, hdUser){
+			public boolean isCellEditable(int i, int c){ 
+				return false; 
+				} 
+			};
 		tblUser = new JTable(modelUser);
 		JScrollPane sp_user = new JScrollPane(tblUser);
 		sp_user.setPreferredSize(new Dimension(100, 400));
@@ -96,6 +110,10 @@ public class ChatClientGUI_v1 extends JFrame implements ActionListener, WindowLi
 	void clientSetting() {
 		String ip = JOptionPane.showInputDialog("접속할 IP 입력", "127.0.0.1");
 		id = JOptionPane.showInputDialog("아이디  입력\n(띄어쓰기 적용X)");
+		
+		///// 이재봉
+		friendlist = new ArrayList<>();
+		/////
 		try {
 			socket = new Socket(ip, 5000);
 			out = new PrintWriter(socket.getOutputStream());
@@ -103,13 +121,13 @@ public class ChatClientGUI_v1 extends JFrame implements ActionListener, WindowLi
 			out.println(id);
 			out.flush();
 			
-			(new ClientThreadGUI(in, out, ta, socket, id, modelUser)).start();
+			(new ClientThreadGUI(in, out, ta, socket, id, modelUser, modelCh, friendlist)).start();
+			// 서버가 보내는 내용을 계속 받기 위한 스레드 실행
 			
-			// 전준형 - 자리비움
+			//// 전준형 - 자리비움
 			afk = new ClientThreadAFK(out, is_afk, this);
 			afk.start();
-			// afk쓰레드 시작
-			
+			//// afk쓰레드 시작
 		} catch (IOException e) {
 			ta.append("접속에 실패하였습니다.\n");
 			for (int i = 5; i > 0; i--) {
@@ -117,7 +135,6 @@ public class ChatClientGUI_v1 extends JFrame implements ActionListener, WindowLi
 					ta.append(i + "초 후 종료됩니다...\n");
 					Thread.sleep(1000);
 				} catch (InterruptedException e1) {
-					// TODO Auto-generated catch block
 					e1.printStackTrace();
 				}
 			}
@@ -126,9 +143,12 @@ public class ChatClientGUI_v1 extends JFrame implements ActionListener, WindowLi
 	}
 	
 	void makeRoom() {
-		String title = JOptionPane.showInputDialog("방제목 입력");
-		modelList.addRow(new String[]{title, id, "1"});
-		new PopRoom(this, title);
+		int result = JOptionPane.showConfirmDialog(this, "방이 선택되지 않았습니다.\n방을 생성하시겠습니까?", "Confirm", JOptionPane.YES_NO_OPTION);
+		if(result == JOptionPane.YES_OPTION) {
+			String title = JOptionPane.showInputDialog("방제목 입력");
+			out.println("/create " + title);
+			new PopRoom(this, title, in, out, socket, id);
+		}
 	}
 
 	public static void main(String[] args) {
@@ -145,12 +165,14 @@ public class ChatClientGUI_v1 extends JFrame implements ActionListener, WindowLi
 			
 			if(tf.getText().equals("/quit")){
 				System.exit(0);
-			}	
+			}
+			
 			tf.setText("");
 		}
 		
-		// 전준형 - 자리비움
+		//// 전준형 - 자리비움
 		if(is_afk) {
+			System.out.println("1");
 			out.println("/back");
 			out.flush();
 			is_afk = false;
@@ -159,7 +181,7 @@ public class ChatClientGUI_v1 extends JFrame implements ActionListener, WindowLi
 		} else {
 			afk.afk_count = 0;
 		}
-		//무슨 행동이든 했으면 자리비움 해제하고 자리비움 카운트 0으로 만들기
+		//// 무슨 행동이든 했으면 자리비움 해제하고 자리비움 카운트 0으로 만들기
 	}
 
 	@Override
@@ -208,15 +230,27 @@ class ClientThreadGUI extends Thread {
 	JTextArea ta;
 	Socket socket;
 	String id;
-	DefaultTableModel modelUser;
+	DefaultTableModel modelCh, modelUser;
+	///// 이재봉
+	ArrayList<String> friendlist;
+	/////
+	
+	///// 윤성록 - 차단기능
+	ArrayList<String> blockList = new ArrayList<>();	// 차단 목록
+	/////
 
-	public ClientThreadGUI(BufferedReader in, PrintWriter out, JTextArea ta, Socket socket, String id, DefaultTableModel modelUser) {
+	public ClientThreadGUI(BufferedReader in, PrintWriter out, JTextArea ta, Socket socket, String id, DefaultTableModel modelUser, DefaultTableModel modelCh, ArrayList<String> friendlist) {
 		this.in = in;
 		this.out = out;
 		this.ta = ta;
 		this.socket = socket;
 		this.id = id;
+		this.modelCh = modelCh;
 		this.modelUser = modelUser;
+		///// 이재봉
+		this.friendlist = friendlist;
+		/////
+		
 	}
 
 	@Override
@@ -232,6 +266,19 @@ class ClientThreadGUI extends Thread {
 				}else if(msg.equals("<서버> : /quit"))  {
 					ta.append("서버가 종료되었습니다.\n");
 					break;
+				}else if(msg.indexOf("<서버> : /chlistsync") == 0) {
+					modelCh.setRowCount(0);
+					msg = msg.replace("<서버> : /chlistsync ", "");
+					if(msg.indexOf("||") > -1) {
+						String[] list = msg.split("||");
+						for (int i = 0; i < list.length; i++) {
+							String[] ch = list[i].split(",");
+							modelCh.addRow(ch);
+						}
+					}else if(msg.indexOf(",") > -1) {
+						String[] ch = msg.split(",");
+						modelCh.addRow(ch);
+					} 
 				}else if(msg.indexOf("<서버> : /userlistsync") == 0) {
 					modelUser.setRowCount(0);
 					msg = msg.replace("<서버> : /userlistsync", "");
@@ -239,12 +286,50 @@ class ClientThreadGUI extends Thread {
 					for (int i = 1; i < list.length; i++) {
 						modelUser.addRow(new String[]{list[i]});
 					}
+					
+				///// 이재봉 - 친구추가
+				}else if(msg.split(" ")[0].equals("[")&&msg.split(" ")[2].equals("]님과")){
+					friendlist.add(msg.split(" ")[1]);
+					ta.append(msg + "\n");
+					ta.setCaretPosition(ta.getDocument().getLength());
+				/////친구목록
+				}else if(msg.equals("친구목록")){	
+					String s;
+					ta.append("친구목록: \n");
+					Iterator<String> e = friendlist.iterator();
+					while(e.hasNext()){
+						s = e.next();
+						ta.append(s+"\n");
+				}
+				/////
+					
+				///// 윤성록 - 차단기능
+				}else if(msg.indexOf("<서버>/blocklist") == 0) {
+					String isBlockList = "";
+					if(!blockList.isEmpty()) {
+						for(int i=0; i<blockList.size(); i++) {
+							isBlockList += blockList.get(i) + ", ";
+						}
+						isBlockList = isBlockList.substring(0, isBlockList.lastIndexOf(", "));
+					} 
+					ta.append("차단명단 : " + isBlockList + "\n");
+				}
+				else if(msg.indexOf("<서버>/block ") == 0 || msg.indexOf("<서버>/unblock ") == 0) {
+					String blockId = msg.indexOf("<서버>/block")==0?msg.split(" ")[1]:null;
+					ta.append("["+msg.split(" ")[1]+"]님을 "+(blockId!=null?"차단하였습니다.\n":"차단해제하였습니다.\n"));
+					if(blockId!=null) blockList.add("["+msg.split(" ")[1]+"]");
+					else blockList.remove("["+msg.split(" ")[1]+"]");
+				}
+				else if(blockList.contains(msg.split("님")[0] + "]")) { 
+					continue;	// 차단자가 귓속말을 했을때 내 채팅창에 안보이게
+				}
+				else if(blockList.contains(msg.split(" ")[0])) {
+					continue;	// 차단자가 전체채팅을 했을때 내 채팅창에 안보이게 
+				/////
 				}else {
 					ta.append(msg + "\n");
-					ta.setCaretPosition(ta.getDocument().getLength());	// 글씨가 자동으로 추가될 때 스크롤바가 안움직이는거 수정
 				}
-				
-				
+				ta.setCaretPosition(ta.getDocument().getLength());	// 글씨가 자동으로 추가될 때 스크롤바가 안움직이는거 수정
 			}
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -277,12 +362,17 @@ class ClientThreadGUI extends Thread {
 	}
 }
 
-class PopRoom extends JDialog implements ActionListener {
+class PopRoom extends JDialog implements ActionListener, Runnable {
 	ChatClientGUI_v1 frame;
 	String title;
+	DefaultTableModel modelChUser;
+	JTable tblChUser;
+	JTextArea ta;
+	JTextField tf;
+	JButton btn;
 	
-	public PopRoom(ChatClientGUI_v1 frame, String title) {
-		super(frame, true);
+	public PopRoom(ChatClientGUI_v1 frame, String title, BufferedReader in, PrintWriter out, Socket socket, String id) {
+		super(frame, false);
 		this.frame = frame;
 		this.title = title;
 		init();
@@ -293,6 +383,20 @@ class PopRoom extends JDialog implements ActionListener {
 		this.setSize(500, 500);
 		this.setTitle(title);
 		
+		ta = new JTextArea();
+		ta.setEditable(false);
+		
+		String[] hd = {"접속자"};
+		String[][] ct = {};
+		modelChUser = new DefaultTableModel(ct, hd){
+			public boolean isCellEditable(int i, int c){ 
+				return false; 
+				} 
+			};
+		tblChUser = new JTable(modelChUser);
+		JScrollPane sp = new JScrollPane(tblChUser);
+		
+		
 		this.setVisible(true);
 	}
 	
@@ -301,10 +405,14 @@ class PopRoom extends JDialog implements ActionListener {
 		// TODO Auto-generated method stub
 		
 	}
-	
+
+	@Override
+	public void run() {
+		// TODO Auto-generated method stub
+	}
 }
 
-// 전준형 - 자리비움
+//// 전준형 - 자리비움
 class ClientThreadAFK extends Thread {
 	PrintWriter out;
 	int afk_count;
@@ -325,7 +433,7 @@ class ClientThreadAFK extends Thread {
 				Thread.sleep(1000);
 				if(!is_afk) {	
 					afk_count++;
-					if(afk_count == 5) {
+					if(afk_count == 3600) {
 						is_afk = true;
 						main.is_afk = true;
 						out.println("/afk");
@@ -340,4 +448,4 @@ class ClientThreadAFK extends Thread {
 		}
 	}
 }
-//
+////
