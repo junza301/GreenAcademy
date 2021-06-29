@@ -13,6 +13,7 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 
 import javax.swing.JButton;
@@ -143,11 +144,17 @@ public class ChatClientGUI_v1 extends JFrame implements ActionListener, WindowLi
 	}
 	
 	void makeRoom() {
-		int result = JOptionPane.showConfirmDialog(this, "방이 선택되지 않았습니다.\n방을 생성하시겠습니까?", "Confirm", JOptionPane.YES_NO_OPTION);
-		if(result == JOptionPane.YES_OPTION) {
-			String title = JOptionPane.showInputDialog("방제목 입력");
-			out.println("/create " + title);
-			new PopRoom(this, title, in, out, socket, id);
+		if(tblCh.getSelectedRow() > -1) {
+			String ch = tblCh.getValueAt(tblCh.getSelectedRow(), 0) + "";
+			out.println("/join " + ch);
+			out.flush();
+		}else {
+			int result = JOptionPane.showConfirmDialog(this, "방이 선택되지 않았습니다.\n방을 생성하시겠습니까?", "Confirm", JOptionPane.YES_NO_OPTION);
+			if(result == JOptionPane.YES_OPTION) {
+				String title = JOptionPane.showInputDialog("방제목 입력");
+				out.println("/create " + title);
+				out.flush();
+			}
 		}
 	}
 
@@ -160,19 +167,20 @@ public class ChatClientGUI_v1 extends JFrame implements ActionListener, WindowLi
 		if(e.getSource() == btnMake) {
 			makeRoom();
 		}else {
-			out.println(tf.getText());
-			out.flush();
-			
-			if(tf.getText().equals("/quit")){
-				System.exit(0);
+			if(out != null) {
+				out.println(tf.getText());
+				out.flush();
+				
+				if(tf.getText().equals("/quit")){
+					System.exit(0);
+				}
+				
+				tf.setText("");
 			}
-			
-			tf.setText("");
 		}
 		
 		//// 전준형 - 자리비움
 		if(is_afk) {
-			System.out.println("1");
 			out.println("/back");
 			out.flush();
 			is_afk = false;
@@ -231,6 +239,9 @@ class ClientThreadGUI extends Thread {
 	Socket socket;
 	String id;
 	DefaultTableModel modelCh, modelUser;
+	HashMap<String, JTextArea> chta;
+	HashMap<String, DefaultTableModel> chuser;
+	
 	///// 이재봉
 	ArrayList<String> friendlist;
 	/////
@@ -247,6 +258,10 @@ class ClientThreadGUI extends Thread {
 		this.id = id;
 		this.modelCh = modelCh;
 		this.modelUser = modelUser;
+		
+		chta = new HashMap<>();
+		chuser = new HashMap<>();
+		
 		///// 이재봉
 		this.friendlist = friendlist;
 		/////
@@ -266,27 +281,52 @@ class ClientThreadGUI extends Thread {
 				}else if(msg.equals("<서버> : /quit"))  {
 					ta.append("서버가 종료되었습니다.\n");
 					break;
-				}else if(msg.indexOf("<서버> : /chlistsync") == 0) {
+				}else if(msg.indexOf("<서버>/chlistsync") == 0) {
 					modelCh.setRowCount(0);
-					msg = msg.replace("<서버> : /chlistsync ", "");
-					if(msg.indexOf("||") > -1) {
-						String[] list = msg.split("||");
+					msg = msg.replace("<서버>/chlistsync ", "");
+					if(msg.indexOf("%!%") > -1) {
+						String[] list = msg.split("%!%");
 						for (int i = 0; i < list.length; i++) {
-							String[] ch = list[i].split(",");
+							String[] ch = list[i].split("%@%");
 							modelCh.addRow(ch);
 						}
-					}else if(msg.indexOf(",") > -1) {
-						String[] ch = msg.split(",");
+					}else if(msg.indexOf("%@%") > -1) {
+						String[] ch = msg.split("%@%");
 						modelCh.addRow(ch);
 					} 
-				}else if(msg.indexOf("<서버> : /userlistsync") == 0) {
+				}else if(msg.indexOf("<서버>/userlistsync") == 0) {
 					modelUser.setRowCount(0);
-					msg = msg.replace("<서버> : /userlistsync", "");
+					msg = msg.replace("<서버>/userlistsync", "");
 					String[] list = msg.split(" ");
 					for (int i = 1; i < list.length; i++) {
 						modelUser.addRow(new String[]{list[i]});
 					}
-					
+				}else if(msg.indexOf("<서버>/chopen ") == 0) {
+					msg = msg.replace("<서버>/chopen ", "");
+					chta.put(msg, new JTextArea());
+					DefaultTableModel tempmodel = new DefaultTableModel((new String[][]{}), (new String[]{"접속자"})){
+						public boolean isCellEditable(int i, int c){ 
+							return false; 
+							}
+						};
+					chuser.put(msg, tempmodel);
+					new PopRoom(msg, out, id, chta.get(msg), chuser.get(msg));
+					out.println("/" + msg + "%#%/sync");
+				}else if(msg.indexOf("@") == 0) {
+					String ch = msg.split("%#%")[0];
+					ch = ch.replace("@", "");
+					msg = msg.replace("%#%", "");
+					if(msg.indexOf("@" + ch + "/sync") == 0) {
+						chuser.get(ch).setRowCount(0);
+						String[] list = msg.replace("@" + ch + "/sync ", "").split(" ");
+						for (int i = 0; i < list.length; i++) {
+							chuser.get(ch).addRow(new String[]{list[i]});
+						}
+					}else if(msg.indexOf("@" + ch + "/close") == 0) {
+					// 클로즈되면 팝업창 닫기
+					}else {
+						chta.get(ch).append(msg.replace("@" + ch, "") + "\n");
+					}
 				///// 이재봉 - 친구추가
 				}else if(msg.split(" ")[0].equals("[")&&msg.split(" ")[2].equals("]님과")){
 					friendlist.add(msg.split(" ")[1]);
@@ -300,7 +340,16 @@ class ClientThreadGUI extends Thread {
 					while(e.hasNext()){
 						s = e.next();
 						ta.append(s+"\n");
-				}
+					}
+				/////친구메시지
+				}else if(msg.equals("/fm")){
+					String s = "";
+					Iterator<String> e = friendlist.iterator();
+					while(e.hasNext()){
+						s += e.next()+" ";
+					}
+					out.println("/rf "+ s);
+					out.flush();
 				/////
 					
 				///// 윤성록 - 차단기능
@@ -362,19 +411,22 @@ class ClientThreadGUI extends Thread {
 	}
 }
 
-class PopRoom extends JDialog implements ActionListener, Runnable {
-	ChatClientGUI_v1 frame;
+class PopRoom extends JDialog implements ActionListener, WindowListener {
 	String title;
 	DefaultTableModel modelChUser;
 	JTable tblChUser;
 	JTextArea ta;
 	JTextField tf;
 	JButton btn;
+	PrintWriter out;
+	String id;
 	
-	public PopRoom(ChatClientGUI_v1 frame, String title, BufferedReader in, PrintWriter out, Socket socket, String id) {
-		super(frame, false);
-		this.frame = frame;
+	public PopRoom(String title, PrintWriter out, String id, JTextArea ta, DefaultTableModel modelChUser) {
 		this.title = title;
+		this.out = out;
+		this.id = id;
+		this.ta = ta;
+		this.modelChUser = modelChUser;
 		init();
 	}
 	
@@ -382,34 +434,84 @@ class PopRoom extends JDialog implements ActionListener, Runnable {
 		this.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
 		this.setSize(500, 500);
 		this.setTitle(title);
+		this.addWindowListener(this);
 		
-		ta = new JTextArea();
 		ta.setEditable(false);
 		
-		String[] hd = {"접속자"};
-		String[][] ct = {};
-		modelChUser = new DefaultTableModel(ct, hd){
-			public boolean isCellEditable(int i, int c){ 
-				return false; 
-				} 
-			};
 		tblChUser = new JTable(modelChUser);
 		JScrollPane sp = new JScrollPane(tblChUser);
+		sp.setPreferredSize(new Dimension(100, 400));
 		
+		JPanel pnl = new JPanel(new BorderLayout());
+		tf = new JTextField();
+		tf.addActionListener(this);
+		btn = new JButton("보내기");
+		btn.addActionListener(this);
+		pnl.add(tf);
+		pnl.add(btn, "East");
+		
+		this.add(ta);
+		this.add(sp, "East");
+		this.add(pnl, "South");
 		
 		this.setVisible(true);
 	}
 	
 	@Override
 	public void actionPerformed(ActionEvent e) {
+		out.println("/" + title + "%#%" + tf.getText());
+		out.flush();
+		
+		if(tf.getText().equals("/exit")){
+			this.dispose();
+		}
+		
+		tf.setText("");
+	}
+	
+	@Override
+	public void windowClosing(WindowEvent e) {
+		out.println("/" + title + "%#%/exit");
+		out.flush();
+		this.dispose();
+	}
+
+	@Override
+	public void windowActivated(WindowEvent e) {
 		// TODO Auto-generated method stub
 		
 	}
 
 	@Override
-	public void run() {
+	public void windowClosed(WindowEvent e) {
 		// TODO Auto-generated method stub
+		
 	}
+
+	@Override
+	public void windowDeactivated(WindowEvent e) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void windowDeiconified(WindowEvent e) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void windowIconified(WindowEvent e) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void windowOpened(WindowEvent e) {
+		// TODO Auto-generated method stub
+		
+	}
+
 }
 
 //// 전준형 - 자리비움
