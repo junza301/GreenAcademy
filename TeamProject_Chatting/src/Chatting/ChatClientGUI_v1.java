@@ -42,6 +42,7 @@ public class ChatClientGUI_v1 extends JFrame implements ActionListener, WindowLi
 	boolean is_afk = false;	//현재 자리비움인지 아닌지
 	////
 	
+	
 	///// 이재봉 - 친구 리스트
 	ArrayList<String> friendlist;
 	/////
