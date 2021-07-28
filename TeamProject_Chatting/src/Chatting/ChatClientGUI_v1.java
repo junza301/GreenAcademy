@@ -43,6 +43,7 @@ public class ChatClientGUI_v1 extends JFrame implements ActionListener, WindowLi
 	////
 	
 	
+	
 	///// 이재봉 - 친구 리스트
 	ArrayList<String> friendlist;
 	/////
