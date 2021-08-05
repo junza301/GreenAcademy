@@ -1,0 +1,31 @@
+<%@ page language="java" contentType="text/html; charset=EUC-KR"
+    pageEncoding="EUC-KR"%>
+<%@page import="java.sql.DriverManager"%>
+<%@page import="java.sql.SQLException"%>
+<%@page import="java.sql.ResultSet"%>
+<%@page import="java.sql.Statement"%>
+<%@page import="java.sql.Connection"%>
+
+<%
+	request.setCharacterEncoding("utf-8");
+	//select 용
+	Connection conn = null;
+	Statement stmt = null;
+	ResultSet rs = null;
+	
+	try{
+		Class.forName("com.mysql.jdbc.Driver");
+		String url = "jdbc:mysql://127.0.0.1/jspdb?characterEncoding=utf8";
+		String dbid = "root";
+		String dbpw = "1234";
+		conn = DriverManager.getConnection(url, dbid, dbpw);//연결끝
+		stmt = conn.createStatement();
+		
+	}catch(ClassNotFoundException cnfe){
+		cnfe.printStackTrace();	
+	}catch(SQLException sqle){
+		sqle.printStackTrace();
+	}
+%>
+
+

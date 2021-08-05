@@ -1,0 +1,13 @@
+<%@ page language="java" contentType="text/html; charset=EUC-KR"
+    pageEncoding="EUC-KR"%>
+<%
+	// 이미 이파일을 불러올 부분에서 변수정의 + import 다 되어 있기 때문에
+	// 굳이 여기서 다시 할 필요없음.
+	/*
+	try{
+		if(stmt != null) stmt.close();
+		if(conn != null) conn.close();
+	}catch(SQLException sqle){
+		sqle.printStackTrace();
+	}*/
+%>
