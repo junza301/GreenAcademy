@@ -1,5 +1,5 @@
-<%@ page language="java" contentType="text/html; charset=EUC-KR"
-    pageEncoding="EUC-KR"%>
+<%@ page language="java" contentType="text/html; charset=UTF-8"
+    pageEncoding="UTF-8"%>
 <%@ include file="/jg_include_iud.jspf" %>    
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <html>
@@ -10,18 +10,18 @@
 <body>
 <%
 	String idx = request.getParameter("idx");
-	String name;
-	String pw;
-	String email;
-	String content;
+	String name = request.getParameter("name");
+	String pw = request.getParameter("pw");
+	String email = request.getParameter("email");
+	String content = request.getParameter("content");
 	
-	// ¾÷µ¥ÀÌÆ® ÇÁ·Î¼¼½º ÆäÀÌÁö
-	String sql = "";
+	// ì—…ë°ì´íŠ¸ í”„ë¡œì„¸ìŠ¤ íŽ˜ì´ì§€
+	String sql = "update guestbook set name='"+name+"', pw='"+pw+"', email='"+email+"', content='"+content+"' where idx="+idx;
 	result = stmt.executeUpdate(sql);
 	if(result>0){
-		//µ¹¾Æ°¡±â - ¸ÞÀÎÀ¸·Î
+		response.sendRedirect("jg_main.jsp");
 	}else{
-		out.println("¿À·ù ¹ß»ý!");
+		out.println("ì˜¤ë¥˜ ë°œìƒ!");
 	}
 %>
 </body>
