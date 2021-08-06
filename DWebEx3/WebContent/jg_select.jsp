@@ -4,10 +4,20 @@
 <table>    
     
 <%	
-	try{	
-		String sql = "select * from guestbook";		
-		rs = stmt.executeQuery(sql);
+	boolean change = false;
+	String select_url = "";
+	String condition = request.getParameter("condition");
+	String content_condition = request.getParameter("ccon");
+	if(condition != null && content_condition != null) {
+		select_url = " where "+ condition + " like '%"+ content_condition + "%'";
+	}
 		
+
+	try{	
+		String sql = "select * from guestbook" + select_url;
+		stmt = conn.prepareStatement(sql);
+		System.out.println(sql);
+		rs = stmt.executeQuery();
 		while(rs.next()){
 %>
 		<tr style="background-color: orange;">

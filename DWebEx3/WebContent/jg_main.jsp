@@ -24,6 +24,7 @@
 	jsp guest book
 	*/
 %>
+
 	<form action="jg_write_proc.jsp">
 	<table>
 		<tr>
@@ -44,6 +45,16 @@
 			<td colspan="4"><input type="submit" value="쓰기"></td>			
 		</tr>
 	</table>
+	</form>
+	<br>
+	검색하기
+	<form action="jg_main.jsp">
+		<select name="condition">
+			<option value="name">유저</option>
+			<option value="content">내용</option>
+		</select>
+		<input type="text" name="ccon">
+		<input type="submit" value="검색">
 	</form>
 	<br>
 	<jsp:include page="jg_select.jsp"/>
