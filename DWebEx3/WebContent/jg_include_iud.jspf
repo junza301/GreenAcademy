@@ -1,5 +1,5 @@
-<%@ page language="java" contentType="text/html; charset=EUC-KR"
-    pageEncoding="EUC-KR"%>
+<%@ page language="java" contentType="text/html; charset=UTF-8"
+    pageEncoding="UTF-8"%>
 <%@page import="java.sql.DriverManager"%>
 <%@page import="java.sql.SQLException"%>
 <%@page import="java.sql.Connection"%>
@@ -7,7 +7,7 @@
 
 <%
 	request.setCharacterEncoding("utf-8");
-	//insert, update, delete ¿ë
+	//insert, update, delete ìš©
 	Connection conn = null;
 	Statement stmt = null;
 	int result = 0;
@@ -17,7 +17,7 @@
 		String url = "jdbc:mysql://127.0.0.1/jspdb?characterEncoding=utf8";
 		String dbid = "root";
 		String dbpw = "1234";
-		conn = DriverManager.getConnection(url, dbid, dbpw);//¿¬°á³¡
+		conn = DriverManager.getConnection(url, dbid, dbpw);//ì—°ê²°ë
 		stmt = conn.createStatement();
 	}catch(ClassNotFoundException cnfe){
 		cnfe.printStackTrace();	

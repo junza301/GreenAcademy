@@ -14,8 +14,10 @@
 	String pw = request.getParameter("pw");
 	//String name = request.getParameter("name");//넘어온 적이 없으니까 사용불가!! null 뜸
 	
+
 	String sql = "select count(idx) AS cnt from guestbook where idx="+idx+" and pw='"+pw+"'";
-	rs = stmt.executeQuery(sql);
+	stmt = conn.prepareStatement(sql);
+	rs = stmt.executeQuery();
 	
 	int result=0;
 	if(rs.next()){
