@@ -96,4 +96,33 @@ public class FDao {
 		return result;
 	}
 	
+	public FDto flogin(FDto inDto){
+	      FDto dto = new FDto();
+	      
+	      System.out.println(inDto.getId());
+	      System.out.println(inDto.getPw());
+	      try{         
+	         conn = getConnection();
+	         String sql = "select * from fmember where id=? and pw=?";
+	         pstmt = conn.prepareStatement(sql);
+	         pstmt.setString(1, inDto.getId());
+	         pstmt.setString(2, inDto.getPw());
+	         rs = pstmt.executeQuery();
+	         if(rs.next()){
+	            dto.setIdx(rs.getInt(1));
+	            dto.setId(rs.getString(2));            
+	            dto.setName(rs.getString(4));
+	            dto.setEmail(rs.getString(5));
+	            dto.setLv(rs.getInt(6));            
+	         }
+	         
+	      }catch(SQLException sqle){
+	         sqle.printStackTrace();
+	      }finally{
+	         freeConnection(rs, pstmt, conn);
+	      }
+	      
+	      return dto;
+	   }
+	
 }

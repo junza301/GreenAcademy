@@ -6,6 +6,7 @@ public class FDto {
 	private String pw;
 	private String name;
 	private String email;
+	private int lv;
 	
 	public int getIdx() {
 		return idx;
@@ -36,6 +37,12 @@ public class FDto {
 	}
 	public void setEmail(String email) {
 		this.email = email;
+	}
+	public int getLv() {
+		return lv;
+	}
+	public void setLv(int lv) {
+		this.lv = lv;
 	}
 	
 	
