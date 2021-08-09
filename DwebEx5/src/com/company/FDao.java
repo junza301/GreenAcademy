@@ -125,4 +125,29 @@ public class FDao {
 	      return dto;
 	   }
 	
+	public Vector<FDto> getAllFmember() {
+		Vector<FDto> v = new Vector<>();
+		conn = getConnection();
+
+		try {
+			String sql = "select * from fmember";
+			pstmt = conn.prepareStatement(sql);
+			rs = pstmt.executeQuery();
+			if(rs.next()) {
+				FDto dto = new FDto();
+				dto.setIdx(rs.getInt(1));
+	            dto.setId(rs.getString(2));            
+	            dto.setName(rs.getString(4));
+	            dto.setEmail(rs.getString(5));
+	            dto.setLv(rs.getInt(6));
+	            v.add(dto);
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+		} finally {
+			freeConnection(rs, pstmt, conn);
+		}
+		return v;
+	}
+	
 }
