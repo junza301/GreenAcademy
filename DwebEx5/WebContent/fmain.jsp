@@ -22,7 +22,10 @@
          }      
    } %>   
    </div>   
-      <div class="newtext"></div>
+      <div class="newtext">
+      	<jsp:include page="fmainnew.jsp"></jsp:include>
+      	<a href="fwrite.jsp">±Û¾²±â</a>
+      </div>
       
       
 <jsp:include page="fbottom.jsp"/>   
