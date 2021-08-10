@@ -23,8 +23,17 @@
    } %>   
    </div>   
       <div class="newtext">
+      	최신글(10)개 - <a href="flist.jsp">더보기</a><br>
       	<jsp:include page="fmainnew.jsp"></jsp:include>
-      	<a href="fwrite.jsp">글쓰기</a>
+      	
+      	<%
+      		if(session.getAttribute("logindata") != null) {
+      	%>
+      		<a href="fwrite.jsp">글쓰기</a>
+      	<%
+      		}
+      	%>
+      	
       </div>
       
       

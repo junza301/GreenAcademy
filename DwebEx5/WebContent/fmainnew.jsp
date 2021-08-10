@@ -19,7 +19,7 @@
 %>			
 			<c:forEach var="i" items="<%=v %>">
 				<tr>
-					<td>${i.idx}</td>
+					<td><a href="fread.jsp?idx=${i.idx}">${i.title}</a></td>
 					<td>${i.title}</td>
 					<td>${i.fmember_name}</td>
 					<td>${i.regdate}</td>

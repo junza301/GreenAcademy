@@ -182,6 +182,38 @@ public class FDao {
 
 		return v;
 	}
+	
+	public Vector<FBDto> getFboardAll(int offset, int cnt){
+		Vector<FBDto> v = new Vector<>();
+		// 1,2,3,4,5,6,7
+		// 0,5,10,15,20,25
+		try{
+		conn = getConnection();		
+		String sql = "select * from fboard order by regdate desc limit ?, ?";
+		pstmt = conn.prepareStatement(sql);
+		pstmt.setInt(1, (offset-1)*cnt);
+		pstmt.setInt(2, cnt);
+		rs=pstmt.executeQuery();
+		
+		while(rs.next()){
+			FBDto dto = new FBDto();
+			dto.setIdx(rs.getInt(1));
+			dto.setFmember_id(rs.getString(2));
+			dto.setFmember_name(rs.getString(3));
+			dto.setTitle(rs.getString(4));
+			dto.setContent(rs.getString(5));
+			dto.setRegdate(rs.getString(6));
+			v.add(dto);
+		}
+			
+		}catch(SQLException sqle){
+			sqle.printStackTrace();
+		}finally {
+			freeConnection(rs, pstmt, conn);
+		}
+		
+		return v;
+	}
 
 	public int insertFBoard(FDto dto, FBDto bdto) {
 
@@ -202,6 +234,50 @@ public class FDao {
 			freeConnection(pstmt, conn);
 		}
 
+		return result;
+	}
+
+	public FBDto getContent(int idx) {
+		FBDto dto = new FBDto();
+		conn = getConnection();
+
+		try {
+			String sql = "select * from fboard where idx = ?";
+			pstmt = conn.prepareStatement(sql);
+			pstmt.setInt(1, idx);
+			rs = pstmt.executeQuery();
+			rs.next();
+			dto.setIdx(rs.getInt(1));
+			dto.setFmember_id(rs.getString(2));
+			dto.setFmember_name(rs.getString(3));
+			dto.setTitle(rs.getString(4));
+			dto.setContent(rs.getString(5));
+			dto.setRegdate(rs.getString(6));
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+		return dto;
+	}
+	
+	public int getTotlaCnt(){
+		try{
+			conn = getConnection();
+			String sql = "select count(idx) from fboard";
+			pstmt=conn.prepareStatement(sql);
+			rs=pstmt.executeQuery();
+			if(rs.next()){
+				result=rs.getInt(1);
+			}
+			
+		}catch (SQLException sqle) {
+			sqle.printStackTrace();
+		}finally {
+			freeConnection(rs, pstmt, conn);
+		}
+		
+		
 		return result;
 	}
 }
