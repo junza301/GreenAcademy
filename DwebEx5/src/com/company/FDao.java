@@ -182,36 +182,36 @@ public class FDao {
 
 		return v;
 	}
-	
-	public Vector<FBDto> getFboardAll(int offset, int cnt){
+
+	public Vector<FBDto> getFboardAll(int offset, int cnt) {
 		Vector<FBDto> v = new Vector<>();
 		// 1,2,3,4,5,6,7
 		// 0,5,10,15,20,25
-		try{
-		conn = getConnection();		
-		String sql = "select * from fboard order by regdate desc limit ?, ?";
-		pstmt = conn.prepareStatement(sql);
-		pstmt.setInt(1, (offset-1)*cnt);
-		pstmt.setInt(2, cnt);
-		rs=pstmt.executeQuery();
-		
-		while(rs.next()){
-			FBDto dto = new FBDto();
-			dto.setIdx(rs.getInt(1));
-			dto.setFmember_id(rs.getString(2));
-			dto.setFmember_name(rs.getString(3));
-			dto.setTitle(rs.getString(4));
-			dto.setContent(rs.getString(5));
-			dto.setRegdate(rs.getString(6));
-			v.add(dto);
-		}
-			
-		}catch(SQLException sqle){
+		try {
+			conn = getConnection();
+			String sql = "select * from fboard order by regdate desc limit ?, ?";
+			pstmt = conn.prepareStatement(sql);
+			pstmt.setInt(1, (offset - 1) * cnt);
+			pstmt.setInt(2, cnt);
+			rs = pstmt.executeQuery();
+
+			while (rs.next()) {
+				FBDto dto = new FBDto();
+				dto.setIdx(rs.getInt(1));
+				dto.setFmember_id(rs.getString(2));
+				dto.setFmember_name(rs.getString(3));
+				dto.setTitle(rs.getString(4));
+				dto.setContent(rs.getString(5));
+				dto.setRegdate(rs.getString(6));
+				v.add(dto);
+			}
+
+		} catch (SQLException sqle) {
 			sqle.printStackTrace();
-		}finally {
+		} finally {
 			freeConnection(rs, pstmt, conn);
 		}
-		
+
 		return v;
 	}
 
@@ -260,21 +260,82 @@ public class FDao {
 
 		return dto;
 	}
-	
-	public int getTotlaCnt(){
-		try{
+
+	public int getTotlaCnt() {
+		try {
 			conn = getConnection();
 			String sql = "select count(idx) from fboard";
-			pstmt=conn.prepareStatement(sql);
-			rs=pstmt.executeQuery();
-			if(rs.next()){
-				result=rs.getInt(1);
+			pstmt = conn.prepareStatement(sql);
+			rs = pstmt.executeQuery();
+			if (rs.next()) {
+				result = rs.getInt(1);
 			}
-			
+
+		} catch (SQLException sqle) {
+			sqle.printStackTrace();
+		} finally {
+			freeConnection(rs, pstmt, conn);
+		}
+
+		return result;
+	}
+
+	public int deleteBoard(int idx, String id){
+		try{
+			conn = getConnection();
+			String sql = "delete from fboard where idx=? and fmeber_id=?";
+			pstmt=conn.prepareStatement(sql);
+			pstmt.setInt(1, idx);
+			pstmt.setString(2, id);
+			result = pstmt.executeUpdate();
+		}catch (SQLException sqle) {
+			sqle.printStackTrace();
+		}finally {
+			freeConnection(pstmt, conn);
+		}
+		
+		return result;
+	}
+	
+	public FBDto getFBoard(int idx, String id){
+		FBDto dto = new FBDto();
+		try{
+			conn=getConnection();
+			String sql = "select * from fboard where idx=? and fmeber_id=?";
+			pstmt=conn.prepareStatement(sql);
+			pstmt.setInt(1, idx);
+			pstmt.setString(2, id);
+			rs = pstmt.executeQuery();
+			if(rs.next()){
+				dto.setIdx(rs.getInt(1));
+				dto.setFmember_id(rs.getString(2));
+				dto.setFmember_name(rs.getString(3));
+				dto.setTitle(rs.getString(4));
+				dto.setContent(rs.getString(5));
+			}
 		}catch (SQLException sqle) {
 			sqle.printStackTrace();
 		}finally {
 			freeConnection(rs, pstmt, conn);
+		}
+		
+		return dto;
+	}
+	
+	public int updateFBoard(FBDto dto, String id){
+		try{
+			conn = getConnection();
+			String sql = "update fboard set title=?, content=?, regdate=now() where fmeber_id=? and idx=?";
+			pstmt=conn.prepareStatement(sql);
+			pstmt.setString(1, dto.getTitle());
+			pstmt.setString(2, dto.getContent());
+			pstmt.setString(3, id);
+			pstmt.setInt(4, dto.getIdx());
+			result = pstmt.executeUpdate();
+		}catch (SQLException sqle) {
+			sqle.printStackTrace();
+		}finally {
+			freeConnection(pstmt, conn);
 		}
 		
 		

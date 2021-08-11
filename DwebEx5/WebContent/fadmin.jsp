@@ -34,5 +34,5 @@
 %>
    
    </table>
-   
+   <a href="fmain.jsp">처음으로</a>
 <jsp:include page="fbottom.jsp"/>

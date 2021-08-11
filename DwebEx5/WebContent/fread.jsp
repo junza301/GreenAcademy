@@ -25,7 +25,7 @@
             </tr>
          </table>
             <c:if test="${sessionScope.logindata.id eq dto.fmember_id}">         
-               <a href="fupdate.jsp">수정</a> <a href="fdelete_proc.jsp?idx=${dto.idx }">삭제</a>
+               <a href="fupdate.jsp?idx=${dto.idx}">수정</a> <a href="fdelete_proc.jsp?idx=${dto.idx }">삭제</a>
             </c:if>
       </c:when>
       <c:otherwise>
